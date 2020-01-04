@@ -25,6 +25,28 @@ function originIsAllowed(origin) {
   // put logic here to detect whether the specified origin is allowed.
   return true;
 }
+
+
+let messages = [];
+
+let Clients = [];
+Clients.removeClient = function(_id) {
+    for (let i = 0; i < this.length; i++)
+    {
+        if (this[i].id != _id) continue;
+        this.splice(i, 0);
+        return true;
+    }
+    return false;
+};
+Clients.broadCast = function(_message) {
+    for (client of this)
+    {
+        client.connection.sendUTF(_message);
+    }
+}
+
+
  
 wsServer.on('request', function(request) {
     if (!originIsAllowed(request.origin)) {
@@ -33,20 +55,37 @@ wsServer.on('request', function(request) {
       console.log((new Date()) + ' Connection from origin ' + request.origin + ' rejected.');
       return;
     }
-    
+
     var connection = request.accept('echo-protocol', request.origin);
+    
+    let Client = {
+        connection: connection,
+        id: newId()
+    };
+    Clients.push(Client);
+
+
     console.log((new Date()) + ' Connection accepted.');
-    connection.on('message', function(message) {
-        if (message.type === 'utf8') {
-            console.log('Received Message: ' + message.utf8Data);
-            connection.sendUTF(message.utf8Data);
-        }
-        else if (message.type === 'binary') {
-            console.log('Received Binary Message of ' + message.binaryData.length + ' bytes');
-            connection.sendBytes(message.binaryData);
-        }
+    Client.connection.on('message', function(message) {
+        if (message.type !== 'utf8') connection.sendUTF("This encoding is not supported.");
+        let messageText = message.utf8Data;
+        let newMessage = {
+            senderId: Client.id,
+            message: messageText
+        };
+        messages.push(newMessage);
+
+        Clients.broadCast(JSON.stringify(newMessage));
     });
-    connection.on('close', function(reasonCode, description) {
+    
+    Client.connection.on('close', function(reasonCode, description) {
         console.log((new Date()) + ' Peer ' + connection.remoteAddress + ' disconnected.');
+        Clients.removeClient(Client.id);
     });
 });
+
+
+
+
+function newId() {return parseInt(Math.round(Math.random() * 100000000) + "" + Math.round(Math.random() * 100000000));}
+
