@@ -64,6 +64,9 @@ wsServer.on('request', function(request) {
     };
     Clients.push(Client);
 
+    for (message of messages) Client.connection.sendUTF(JSON.stringify(message));
+
+
 
     console.log((new Date()) + ' Connection accepted.');
     Client.connection.on('message', function(message) {
