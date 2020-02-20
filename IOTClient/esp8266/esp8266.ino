@@ -13,7 +13,7 @@ SocketIoClient webSocket;
 void event(const char * payload, size_t length) {
   USE_SERIAL.printf("got message: %s\n", payload);
   delay(100);
-  webSocket.emit("yes", "\"Hello there server. how are you?\"");
+  webSocket.emit("yes", "\"Hello there server. How are you?\"");
 }
 
 void setup() {
